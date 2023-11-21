@@ -111,7 +111,7 @@ class Graph:
 
         visited = [False] * len(self.__g)
         order = Queue(-1) 
-        order.put((v, v ,0))
+        order.put((v, -1 ,0))
 
         d_list = [float('inf')] * len(self.__g)
         pi_list = [-1] * len(self.__g)
@@ -138,28 +138,31 @@ class Graph:
         self.___test_for_out_of_range_exception(v)
 
         visited = [False] * len(self.__g)
-        order = [(v,v,0)]
+        # order = [(v,v)]
 
         pi_list = [-1] * len(self.__g)
 
-        raise NotImplementedError()
+        v_ini = [-1] *  len(self.__g)
+        v_fim = [-1] *  len(self.__g)
 
-        while not len(order) > 0:
-            vertex, last, dist = order.pop()
-            
-            if visited[vertex]: 
-                continue
+        clock = -1
 
+        def traverse(vertex : int, last : int):
+            if visited[vertex]:
+                return
             visited[vertex] = True
-            d_list[v] = dist
+
+            v_ini[vertex] = (clock := clock + 1)
             pi_list[vertex] = last
 
+            for next, _ in self.__g[vertex]:
+                traverse(next, vertex)
 
-            for next, next_dist in self.__g[vertex]:
-                order.append((next, vertex, next_dist + dist))
+            v_fim[vertex] = (clock := clock + 1)
 
+        traverse(v, -1)
 
-        return (d_list, pi_list)
+        return (pi_list, v_ini, v_fim)
 
     def bf(self, v: int):
         raise NotImplementedError()
@@ -169,7 +172,7 @@ class Graph:
 
         visited = [False] * len(self.__g)
         order = PriorityQueue(-1) 
-        order.put((0,v, v))
+        order.put((0,v, -1))
 
         d_list = [float('inf')] * len(self.__g)
         pi_list = [-1] * len(self.__g)
