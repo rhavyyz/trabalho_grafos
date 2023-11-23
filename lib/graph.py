@@ -1,6 +1,10 @@
-from lib.edge import Edge
+from lib.edges import Edge, EntireEdge
 from queue import Queue, PriorityQueue
 
+
+'''
+    Graph with a fixed number of vertices passed by constructor
+'''
 class Graph:
 
     __digraph = False
@@ -21,8 +25,7 @@ class Graph:
         if n < 0:
             raise Exception('A graph should contain at least 0 vertices')
 
-        self.__g : list[list[Edge]] = []
-        self.__g += [[]]  * n
+        self.__g : list[list[Edge]] = [[]]  * n
 
 
     def add_edge(self, v : int, w : int, weigth : float = 1):
@@ -165,7 +168,31 @@ class Graph:
         return (pi_list, v_ini, v_fim)
 
     def bf(self, v: int):
-        raise NotImplementedError()
+        self.___test_for_out_of_range_exception(v)
+
+        edgeList = set()
+        for current, adjacency_list in enumerate(self.__g):
+            for edge in adjacency_list:
+                edgeList.append(EntireEdge(v= current, 
+                                        w= edge.next_vertex ,
+                                        weight= edge.weight)
+                            )
+
+        m = len(edgeList)
+        n = len(self.__g)
+
+        d_list = [float('inf')] * len(self.__g)
+        pi = [-1] * len(self.__g) 
+
+        d_list[v] = 0
+
+        for c in range(0, n-1):
+            for u, w, weight in edgeList:
+                if d_list[u] != float('inf') and d_list[u] + weight < d_list[w]:
+                    pi[w] = u
+                    d_list[w] = d_list[u] + weight
+
+        return (d_list, pi)
 
     def djikstra(self, v : int):
         self.___test_for_out_of_range_exception(v)
