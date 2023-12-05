@@ -1,229 +1,177 @@
-from lib.edges import Edge, EntireEdge
-from queue import Queue, PriorityQueue
-
-
-'''
-    Graph with a fixed number of vertices passed by constructor
-'''
+from queue import Queue
+import heapq
 class Graph:
+    def __init__(self,n,m, weighted=True):
+        self.n = n # Number of vertices
+        self.m = m # Number of edges
+        self.weighted = weighted # Whether the graph is weighted or not
+        self.adjacency_list = [[] for _ in range(n)] # 
 
-    __digraph = False
+    def add_edge(self, source, to, weight=1):
+        if self.weighted:
+            if any(to == neighbor for neighbor, _ in self.adjacency_list[source - 1]):
+                return
+            self.adjacency_list[source - 1].append((to, weight))
+            self.adjacency_list[to - 1].append((source, weight))
+        else:
+            if any(to == neighbor for neighbor, _ in self.adjacency_list[source - 1]):
+                return
+            self.adjacency_list[source - 1].append((to, 1))
+            self.adjacency_list[to - 1].append((source, 1))
 
-
-    ############################# Exception tests #########################################
-    def ___test_for_out_of_range_exception(self, *args):
-        for arg in args:
-            if arg >= len(self.__g):
-                raise Exception(f"Vertex out of range: [0, {len(self.__g) -1}]")             
-            
-    def ___test_for_self_edge_not_permited_exception(self, v ,w):
-        if v == w:
-            raise Exception("Self edge not permited")
-    #######################################################################################
-
-    def __init__(self, n) -> None:
-        if n < 0:
-            raise Exception('A graph should contain at least 0 vertices')
-
-        self.__g : list[list[Edge]] = [[]]  * n
-
-
-    def add_edge(self, v : int, w : int, weigth : float = 1):
-        self.___test_for_out_of_range_exception(v,w)
-        self.___test_for_self_edge_not_permited_exception(v, w)
-
-        for edge in self.__g[v]:
-            if edge.next_vertex == w:
-                raise Exception(f'Cant register 2 edges from {v} to {w}')
-
-        self.__g[v].append(Edge(w, weigth))
-        
-        if not self.__digraph:    
-            self.__g[w].append(Edge(v, weigth))
-
-    def remove_edge(self, v : int, w : int):
-        self.___test_for_out_of_range_exception(v,w)
-
-        weigth = None
-
-        for edge in self.__g[v]:
-            if edge.next_vertex == w:
-                weigth = edge.weight
-                break
-
-        if weigth == None:
-            return
-        
-        self.__g[v].remove(Edge(w, weight))
-
-        if not self.__digraph:    
-            self.__g[w].remove(Edge(v, weigth=weigth))
-
-
-        return len(self.__g[v])
-
-
-    ################################# Requiriments ########################################
-    def n(self):
-        return len(self.__g)
+    def viz(self, source):
+        return self.adjacency_list[source - 1]
     
-    def m(self):
-        tot = 0
-
-        for adjacency_list in self.__g:
-            tot += len(adjacency_list)
-
-        return tot / 2
-    
-    def d(self, v : int):
-        self.___test_for_out_of_range_exception(v)
-
-        return len(self.__g[v])
-    
-    def viz(self, v : int):
-        self.___test_for_out_of_range_exception(v)
-
-        return self.__g[v].copy()
-    
-    def mind(self):
-        if len(self.__g) == 0:
-            return None
-        
-        min = len(self.__g[0])
-
-        for c in range(1, len(self.__g)):
-            if min > len(self.__g[c]):
-                min = len(self.__g[c])
-
-        return min
+    def d(self, source):
+        return len(self.adjacency_list[source - 1])
     
     def maxd(self):
-        if len(self.__g) == 0:
-            return None
+        return max(len(neighbors) for neighbors in self.adjacency_list)
+
+    def mind(self):
+        return min(len(neighbors) for neighbors in self.adjacency_list)
+
+    
+    def w(self, source, to):
+        for neighbor in self.adjacency_list[source - 1]:
+            if isinstance(neighbor, tuple) and neighbor[0] == to:
+                return neighbor[1]
+        return 0
+    
+    def bfs(self, source):
+        visited = [False] * self.n
+        d = [float('inf')] * self.n  # Distance from source to each node
+        pi = [-1] * self.n  # Parent of each node in the path from the source
+
+        queue = Queue()
+        queue.put(source)
+        visited[source - 1] = True
+        d[source - 1] = 0  # Distance from source to itself is 0
+        pi[source - 1] = source  # Parent of the source is itself
+
+        while not queue.empty():
+            current = queue.get()
+            for neighbor, weight in self.adjacency_list[current - 1]:
+                if not visited[neighbor - 1]:
+                    visited[neighbor - 1] = True
+                    d[neighbor - 1] = d[current - 1] + 1  # Increment the distance
+                    pi[neighbor - 1] = current  # Set the parent
+                    queue.put(neighbor)
+
+        return d, pi
+    
+    def dfs(self, source):
+        visited = [False] * self.n
+        pi = [-1] * self.n
+        v_ini = [-1] * self.n
+        v_end = [-1] * self.n
+
+        stack = [(source, 'entry')]  # Stack of (vertex, entry/exit)
+        time = 0
+
+        while stack:
+            vertex, action = stack.pop()
+
+            if action == 'entry':
+                if visited[vertex - 1]:
+                    continue
+
+                visited[vertex - 1] = True
+                time += 1
+                v_ini[vertex - 1] = time
+                stack.append((vertex, 'exit'))  # Add for finish time
+
+                for neighbor, _ in self.adjacency_list[vertex - 1]:
+                    if not visited[neighbor - 1]:
+                        pi[neighbor - 1] = vertex
+                        stack.append((neighbor, 'entry'))
+
+            elif action == 'exit':
+                time += 1
+                v_end[vertex - 1] = time
+
+        return pi, v_ini, v_end
+    
+    def bellman_ford(self, source):
+        d = [float('inf')] * self.n  # Initialize distances to infinity
+        pi = [-1] * self.n  # Initialize predecessors to -1 (no predecessor)
+
+        d[source - 1] = 0  # Distance from source to itself is 0
+
+        # Relax edges repeatedly
+        for _ in range(self.n - 1):
+            for u in range(self.n):
+                for v, w in self.adjacency_list[u]:
+                    if d[u] + w < d[v - 1]:
+                        d[v - 1] = d[u] + w
+                        pi[v - 1] = u + 1
+
+        # Check for negative weight cycles
+        for u in range(self.n):
+            for v, w in self.adjacency_list[u]:
+                if d[u] + w < d[v - 1]:
+                    raise ValueError("Graph contains a negative-weight cycle")
+
+        return d, pi
+
+    def dijkstra(self, source):
+            d = [float('inf')] * self.n  # Initialize distances to infinity
+            pi = [-1] * self.n  # Initialize predecessors to -1 (no predecessor)
+
+            d[source - 1] = 0  # Distance from source to itself is 0
+            queue = [(0, source)]  # Priority queue, initialized with source
+
+            while queue:
+                dist, u = heapq.heappop(queue)  # Vertex with the shortest distance
+                if dist > d[u - 1]:
+                    continue  # Skip if we have already found a shorter path
+
+                for v, weight in self.adjacency_list[u - 1]:
+                    if d[u - 1] + weight < d[v - 1]:
+                        d[v - 1] = d[u - 1] + weight
+                        pi[v - 1] = u
+                        heapq.heappush(queue, (d[v - 1], v))
+
+            return d, pi
+
+    def find_long_path(self, min_length):
+        for start_vertex in range(1, self.n + 1):
+            _, v_ini, v_end = self.dfs(start_vertex)
+            path = [i for i, v in enumerate(v_ini) if v != -1]  # vertices visited
+            if len(path) >= min_length:
+                return path[:min_length]
+        return None
         
-        max = len(self.__g[0])
+    def find_cycle(self, min_length):
+        for vertex in range(1, self.n + 1):
+            if cycle := self.dfs_find_cycle(vertex, min_length):
+                return cycle
+        return None
 
-        for c in range(1, len(self.__g)):
-            if max < len(self.__g[c]):
-                max = len(self.__g[c])
+    def dfs_find_cycle(self, start_vertex, min_length):
+        visited = [False] * self.n
+        parent = [-1] * self.n
+        stack = [(start_vertex, 0)]
 
-        return max
-
-    def bfs(self, v : int):
-        self.___test_for_out_of_range_exception(v)
-
-        visited = [False] * len(self.__g)
-        order = Queue(-1) 
-        order.put((v, -1 ,0))
-
-        d_list = [float('inf')] * len(self.__g)
-        pi_list = [-1] * len(self.__g)
-
-        while not order.empty() > 0:
-            vertex, last, dist = order.get_nowait()
-            
-            if visited[vertex]: 
+        while stack:
+            vertex, depth = stack.pop()
+            if visited[vertex - 1]:
                 continue
 
-            visited[vertex] = True
-            d_list[v] = dist
-            pi_list[vertex] = last
+            visited[vertex - 1] = True
+            for neighbor, _ in self.adjacency_list[vertex - 1]:
+                if visited[neighbor - 1] and parent[vertex - 1] != neighbor and depth >= min_length - 1:
+                    return self.reconstruct_cycle(parent, vertex, neighbor)
+                if not visited[neighbor - 1]:
+                    parent[neighbor - 1] = vertex
+                    stack.append((neighbor, depth + 1))
 
+        return None
 
-            for next, next_dist in self.__g[vertex]:
-                order.put((next, vertex, next_dist + dist))
-
-
-        return (d_list, pi_list)
-
-
-    def dfs(self, v : int):
-        self.___test_for_out_of_range_exception(v)
-
-        visited = [False] * len(self.__g)
-        # order = [(v,v)]
-
-        pi_list = [-1] * len(self.__g)
-
-        v_ini = [-1] *  len(self.__g)
-        v_fim = [-1] *  len(self.__g)
-
-        clock = -1
-
-        def traverse(vertex : int, last : int):
-            if visited[vertex]:
-                return
-            visited[vertex] = True
-
-            v_ini[vertex] = (clock := clock + 1)
-            pi_list[vertex] = last
-
-            for next, _ in self.__g[vertex]:
-                traverse(next, vertex)
-
-            v_fim[vertex] = (clock := clock + 1)
-
-        traverse(v, -1)
-
-        return (pi_list, v_ini, v_fim)
-
-    def bf(self, v: int):
-        self.___test_for_out_of_range_exception(v)
-
-        edgeList = set()
-        for current, adjacency_list in enumerate(self.__g):
-            for edge in adjacency_list:
-                edgeList.append(EntireEdge(v= current, 
-                                        w= edge.next_vertex ,
-                                        weight= edge.weight)
-                            )
-
-        m = len(edgeList)
-        n = len(self.__g)
-
-        d_list = [float('inf')] * len(self.__g)
-        pi = [-1] * len(self.__g) 
-
-        d_list[v] = 0
-
-        for c in range(0, n-1):
-            for u, w, weight in edgeList:
-                if d_list[u] != float('inf') and d_list[u] + weight < d_list[w]:
-                    pi[w] = u
-                    d_list[w] = d_list[u] + weight
-
-        return (d_list, pi)
-
-    def djikstra(self, v : int):
-        self.___test_for_out_of_range_exception(v)
-
-        visited = [False] * len(self.__g)
-        order = PriorityQueue(-1) 
-        order.put((0,v, -1))
-
-        d_list = [float('inf')] * len(self.__g)
-        pi_list = [-1] * len(self.__g)
-
-        while not order.empty() > 0:
-            dist, vertex, last = order.get_nowait()
-            
-            if visited[vertex]: 
-                continue
-
-            visited[vertex] = True
-            d_list[v] = dist
-            pi_list[vertex] = last
-
-
-            for next, next_dist in self.__g[vertex]:
-                order.put((next_dist + dist, next, vertex))
-
-        return (d_list, pi_list)
-
-        
-
-
-    #######################################################################################
-
-# if __name__ == "__main__":
-#     main()
+    def reconstruct_cycle(self,parent, start, end):
+        cycle = [end]
+        while start != end:
+            cycle.append(start)
+            start = parent[start - 1]
+        cycle.append(end)
+        return cycle[::-1]
