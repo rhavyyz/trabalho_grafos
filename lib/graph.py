@@ -135,13 +135,49 @@ class Graph:
             return d, pi
 
     def find_long_path(self, min_length):
-        for start_vertex in range(1, self.n + 1):
-            _, v_ini, v_end = self.dfs(start_vertex)
-            path = [i for i, v in enumerate(v_ini) if v != -1]  # vertices visited
-            if len(path) >= min_length:
-                return path[:min_length]
-        return None
+        """
+        Encontra um caminho no grafo com um número de arestas maior ou igual a min_length.
+
+        Args:
+            min_length (int): O número mínimo de arestas que o caminho deve ter.
+        Returns:
+            list: Um caminho no grafo que atende ao requisito de comprimento, ou None se nenhum for encontrado.
+        """
         
+        for start_vertex in range(1, self.n + 1):
+            path = self.dfs_path(start_vertex, min_length)
+            if path is not None:
+                return path
+        return None
+    
+    def dfs_path(self, start_vertex, min_length):
+        """
+        Realiza uma busca em profundidade a partir de um vértice de início, procurando um caminho com o comprimento mínimo especificado.
+
+        Args:
+            start_vertex (int): Vértice de início para a busca.
+            min_length (int): Comprimento mínimo do caminho.
+
+        Returns:
+            list: Um caminho que atende ao comprimento mínimo, ou None se nenhum for encontrado.
+        """
+        visited = [False] * self.n
+        stack = [(start_vertex, [start_vertex])]
+
+        while stack:
+            vertex, path = stack.pop()
+            if visited[vertex - 1]:
+                continue
+
+            visited[vertex - 1] = True
+            for neighbor, _ in self.adjacency_list[vertex - 1]:
+                if not visited[neighbor - 1]:
+                    new_path = path + [neighbor]
+                    if len(new_path) - 1 >= min_length:  # -1 pois estamos contando arestas, não vértices
+                        return new_path
+                    stack.append((neighbor, new_path))
+        return None
+    
     def find_cycle(self, min_length):
         for vertex in range(1, self.n + 1):
             if cycle := self.dfs_find_cycle(vertex, min_length):
@@ -160,14 +196,16 @@ class Graph:
 
             visited[vertex - 1] = True
             for neighbor, _ in self.adjacency_list[vertex - 1]:
-                if visited[neighbor - 1] and parent[vertex - 1] != neighbor and depth >= min_length - 1:
-                    return self.reconstruct_cycle(parent, vertex, neighbor)
+                if visited[neighbor - 1] and parent[vertex - 1] != neighbor:
+                    if depth >= min_length - 1:  # Certifica-se de que o ciclo tem o tamanho mínimo
+                        cycle = self.reconstruct_cycle(parent, vertex, neighbor)
+                        if len(cycle) >= min_length + 1:  # +1 porque estamos contando vértices, não arestas
+                            return cycle
                 if not visited[neighbor - 1]:
                     parent[neighbor - 1] = vertex
                     stack.append((neighbor, depth + 1))
-
         return None
-
+    
     def reconstruct_cycle(self,parent, start, end):
         cycle = [end]
         while start != end:
