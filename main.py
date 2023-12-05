@@ -1,4 +1,5 @@
 from lib.graph import Graph
+from lib.digraph import Digraph
 from lib.fileUtils import FileUtils
 # from lib.digraph import Digraph
 
@@ -8,29 +9,63 @@ from lib.fileUtils import FileUtils
 def main():
     filename = 'USA-road-d.NY.gr'
     graph_params = FileUtils.data_graph_from_file(filename)
-    g = Graph(graph_params[0][0], graph_params[0][1], True)
-    FileUtils.fill_graph_from_file(g, filename)
+    graph = Graph(graph_params[0][0], graph_params[0][1], True)
+    FileUtils.fill_graph_from_file(graph, filename)
+    digraph = Digraph(graph_params[0][0], graph_params[0][1], True)
+    FileUtils.fill_graph_from_file(digraph, filename)
     
-    testes(g)
-    
+    #testes(graph)
+    runTaskForGraph(graph)
+    runTaskForDigraph(digraph)
+
+
+def runTaskForGraph(graph):
+    print('#'*20)
+    print("Para um grafo orientado:")
     # a) Minimum degree
-    print("a) Minimum degree:", g.mind())
+    print("a) Minimum degree:", graph.mind())
 
     # b) Maximum degree
-    print("b) Maximum degree:", g.maxd())
+    print("b) Maximum degree:", graph.maxd())
 
     # c) Path with >= 10 edges
-    path = g.find_long_path(10)
+    path = graph.find_long_path(10)
     print("c) Long path with >= 10 edges:", path)
 
     # # d) Cycle with >= 5 edges
-    cycle = g.find_cycle(5)
+    cycle = graph.find_cycle(5)
     print("d) Cycle with >= 5 edges:", cycle)
 
     # e) Farthest vertex from vertex 129
-    distances, _ = g.dijkstra(129)
+    distances, _ = graph.dijkstra(129)
     farthest_vertex, max_distance = max(enumerate(distances), key=lambda x: x[1])
     print("e) Farthest vertex from 129:", farthest_vertex + 1, "Distance:", max_distance)
+
+    print('#'*20)
+
+def runTaskForDigraph(digraph):
+    print('#'*20)
+    print("Para um grafo não orientado:(Digrafo)")
+    
+    # a) Minimum degree
+    print("a) Minimum degree:", digraph.mind())
+
+    # b) Maximum degree
+    print("b) Maximum degree:", digraph.maxd())
+
+    # c) Path with >= 10 edges
+    path = digraph.find_long_path(10)
+    print("c) Long path with >= 10 edges:", path)
+
+    # # d) Cycle with >= 5 edges
+    cycle = digraph.find_cycle(5)
+    print("d) Cycle with >= 5 edges:", cycle)
+
+    # e) Farthest vertex from vertex 129
+    distances, _ = digraph.dijkstra(129)
+    farthest_vertex, max_distance = max(enumerate(distances), key=lambda x: x[1])
+    print("e) Farthest vertex from 129:", farthest_vertex + 1, "Distance:", max_distance)
+    print('#'*20)
 
 def testes(graph):
     # 1.A

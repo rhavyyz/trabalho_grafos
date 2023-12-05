@@ -97,7 +97,7 @@ class Digraph:
 
         Returns:
             tuple: Retorna dois arrays, um com as distâncias do vértice fonte até cada vértice,
-                  e outro com os predecessores de cada vértice no caminho da busca.
+                e outro com os predecessores de cada vértice no caminho da busca.
         """
         visited = [False] * self.n # Vértices visitados
         distances = [float('inf')] * self.n  # Distância do vértice fonte para cada vértice
@@ -166,7 +166,7 @@ class Digraph:
                 time += 1
 
         return predecessors, discovery_time, finish_time
-      
+
     def bellman_ford(self, source):
         """
         Executa o algoritmo Bellman-Ford para encontrar as distâncias mais curtas a partir de um vértice fonte em um dígrafo.
