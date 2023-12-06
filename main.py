@@ -1,10 +1,6 @@
 from lib.graph import Graph
 from lib.digraph import Digraph
 from lib.fileUtils import FileUtils
-# from lib.digraph import Digraph
-
-# Tasks :
-# 1. Input graph from file 
 
 def main():
     filename = 'USA-road-d.NY.gr'
